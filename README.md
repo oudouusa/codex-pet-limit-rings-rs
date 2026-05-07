@@ -187,6 +187,7 @@ MIT. See `LICENSE`.
 
 ## Acknowledgements
 
-This repository is inspired by and compatible with the MIT-licensed
+This repository is derived from and inspired by the MIT-licensed
 [`petergpt/codex-pet-limit-rings`](https://github.com/petergpt/codex-pet-limit-rings)
-project. See `NOTICE.md`.
+project. Portions of the documentation, repository structure, and companion-app
+design were adapted from that project. See `NOTICE.md`.
