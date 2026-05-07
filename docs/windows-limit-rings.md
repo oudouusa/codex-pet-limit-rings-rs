@@ -1,6 +1,33 @@
 # Windows Codex Pet Limit Rings
 
-The Windows build follows the same boundary as the macOS version: it is a separate Rust companion app. It does not patch Codex or modify pet sprites.
+The Windows build is the primary build for this repository. It is a separate
+native Rust companion app that draws a transparent Win32 overlay around the
+current Codex pet. It does not patch Codex or modify pet sprites.
+
+## Requirements
+
+Runtime requirements:
+
+- Windows 10 or Windows 11.
+- Codex desktop app with a Codex pet enabled.
+- Local Codex state under `%USERPROFILE%\.codex`.
+- Internet access for live usage data from ChatGPT. If live usage is
+  unavailable, the app falls back to local cached `codex.rate_limits` events.
+
+Source build and install requirements:
+
+- PowerShell 5.1 or newer.
+- Git, if installing from a cloned GitHub repository.
+- Rust/Cargo stable toolchain.
+- A Windows Rust build environment. The usual setup is
+  `x86_64-pc-windows-msvc` plus Microsoft C++ Build Tools or Visual Studio
+  Build Tools.
+
+Not required:
+
+- OpenAI API key.
+- Administrator privileges.
+- Any patch to the Codex desktop app.
 
 ## What It Does
 
@@ -44,7 +71,7 @@ cargo run --manifest-path .\tools\rust\Cargo.toml -- --offset-x 8 --offset-y -4
 
 ## Run From Source
 
-Windows source builds require Rust/Cargo.
+Windows source builds require Rust/Cargo and a working Windows linker/toolchain.
 
 ```powershell
 .\tools\run-limit-rings.ps1

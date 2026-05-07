@@ -1,8 +1,8 @@
 # codex-pet-limit-rings-rs
 
-Codex pets are tiny ambient companions for the work happening in Codex. This project adds one more layer to that idea: your pet can quietly show how much Codex capacity you have left, without turning the app into a dashboard.
+Codex pets are tiny ambient companions for the work happening in Codex. This Rust-focused Windows companion adds one more layer to that idea: your pet can quietly show how much Codex capacity you have left, without turning the app into a dashboard.
 
-The experience is a small native companion app for macOS and Windows. It watches where the Codex pet is, draws two polished rings around it, and keeps those rings attached to the pet as it moves. It does not patch Codex, change pet art, or modify the Codex app bundle.
+The main build in this repository is a native Rust app for Windows. It watches where the Codex pet is, draws two polished rings around it, and keeps those rings attached to the pet as it moves. It does not patch Codex, change pet art, or modify the Codex app bundle.
 
 It works with whatever Codex pet you like. Built-in pet, custom pet, tiny dog, robot, weather daemon, or anything else: the app does not care. It only follows the pet window that Codex is already showing.
 
@@ -32,12 +32,29 @@ The important design choice is the companion boundary. A menu item inside Codex 
 
 ### Windows / Rust
 
-The Windows companion app lives under `tools/rust/` and uses the same
-unpatched companion boundary. It tracks the live pet window, follows dragging
-and momentum movement, handles mixed-DPI displays, and keeps the rings attached
-to the pet.
+The Windows companion app lives under `tools/rust/`. It is written in Rust and
+uses Win32 layered windows for a transparent, low-memory overlay. It tracks the
+live pet window, follows dragging and momentum movement, handles mixed-DPI
+displays, and keeps the rings attached to the pet.
 
-Windows source installs require Rust/Cargo.
+Requirements:
+
+- Windows 10 or Windows 11.
+- Codex desktop app with a Codex pet enabled.
+- PowerShell 5.1 or newer.
+- Git, when installing from a cloned repository.
+- Rust/Cargo stable toolchain.
+- A working Windows Rust build environment, usually `x86_64-pc-windows-msvc`
+  with Microsoft C++ Build Tools or Visual Studio Build Tools installed.
+- Local Codex files under `%USERPROFILE%\.codex`.
+- Internet access for live usage data. Cached local limit data can still be
+  used when live usage is unavailable.
+
+Not required:
+
+- OpenAI API key.
+- Administrator privileges.
+- Patching or modifying the Codex app.
 
 Run it from source:
 
@@ -151,7 +168,7 @@ experiments/weather-pets/
 
 ## Development
 
-Build the app:
+Build the macOS app:
 
 ```bash
 tools/build-limit-rings.sh
@@ -164,11 +181,17 @@ swiftc tools/codex-pet-limit-rings.swift -o tmp/codex-pet-limit-rings -framework
 tmp/codex-pet-limit-rings --preview tmp/limit-rings-preview.png --size 164
 ```
 
-Build the Windows app:
+Build the Windows Rust app:
 
 ```powershell
 cargo build --manifest-path .\tools\rust\Cargo.toml --release
 cargo run --manifest-path .\tools\rust\Cargo.toml -- --preview .\tmp\limit-rings-windows-preview.png --size 220
+```
+
+The release executable is written to:
+
+```text
+tools\rust\target\release\codex-pet-limit-rings.exe
 ```
 
 Validate the shell scripts:

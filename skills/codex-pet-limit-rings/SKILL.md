@@ -29,6 +29,11 @@ If the user provides the GitHub repository URL and no checkout exists, clone or 
 
 Choose the command for the current OS. On Windows, use PowerShell. On macOS, use Bash.
 
+For Windows, verify the user has Rust/Cargo and a working Windows Rust build
+environment before installing from source. The expected setup is documented in
+`docs/windows-limit-rings.md`: Windows 10/11, PowerShell, Rust stable, and the
+MSVC build tools or another working Windows linker/toolchain.
+
 Windows install and verify:
 
 ```powershell
