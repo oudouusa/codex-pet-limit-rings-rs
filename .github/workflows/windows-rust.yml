@@ -1,0 +1,32 @@
+name: Windows Rust
+
+on:
+  push:
+    paths:
+      - ".github/workflows/windows-rust.yml"
+      - "tools/*.ps1"
+      - "tools/rust/**"
+  pull_request:
+    paths:
+      - ".github/workflows/windows-rust.yml"
+      - "tools/*.ps1"
+      - "tools/rust/**"
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Format
+        run: cargo fmt --manifest-path tools/rust/Cargo.toml --check
+
+      - name: Build
+        run: cargo build --manifest-path tools/rust/Cargo.toml --release
+
+      - name: Render preview
+        shell: pwsh
+        run: cargo run --manifest-path tools/rust/Cargo.toml -- --preview tmp/limit-rings-windows-preview.png --size 220
