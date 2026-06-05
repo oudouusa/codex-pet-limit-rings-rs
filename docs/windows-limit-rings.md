@@ -32,7 +32,7 @@ Not required:
 ## What It Does
 
 - Reads live usage from `https://chatgpt.com/backend-api/wham/usage` using the local token in `%USERPROFILE%\.codex\auth.json`.
-- Falls back to the newest `codex.rate_limits` event in `%USERPROFILE%\.codex\logs_2.sqlite`.
+- Falls back to the newest `codex.rate_limits` event in `%USERPROFILE%\.codex\logs_2.sqlite` or `logs_1.sqlite`.
 - Reads the Codex pet position from `%USERPROFILE%\.codex\.codex-global-state.json` when `electron-avatar-overlay-bounds.mascot` is available.
 - Tracks the live Codex pet overlay window as the physical coordinate source, so the rings keep up during movement and moves between displays with different scale settings.
 - Draws a transparent Win32 layered overlay around the current pet and places it directly behind the pet window.
@@ -66,7 +66,7 @@ The offset is saved in:
 You can also start with explicit offsets:
 
 ```powershell
-cargo run --manifest-path .\tools\rust\Cargo.toml -- --offset-x 8 --offset-y -4
+cargo run -- --offset-x 8 --offset-y -4
 ```
 
 ## Run From Source
@@ -80,7 +80,7 @@ Windows source builds require Rust/Cargo and a working Windows linker/toolchain.
 Preview a static PNG:
 
 ```powershell
-cargo run --manifest-path .\tools\rust\Cargo.toml -- --preview .\tmp\limit-rings-windows-preview.png --size 220
+cargo run -- --preview .\tmp\limit-rings-windows-preview.png --size 220
 ```
 
 ## Install At Login

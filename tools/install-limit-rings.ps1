@@ -1,8 +1,8 @@
 $ErrorActionPreference = "Stop"
 
 $Root = Resolve-Path (Join-Path $PSScriptRoot "..")
-$Manifest = Join-Path $Root "tools\rust\Cargo.toml"
-$RustExe = Join-Path $Root "tools\rust\target\release\codex-pet-limit-rings.exe"
+$Manifest = Join-Path $Root "Cargo.toml"
+$RustExe = Join-Path $Root "target\release\codex-pet-limit-rings.exe"
 $InstallDir = Join-Path $env:LOCALAPPDATA "CodexPetLimitRings"
 $Exe = Join-Path $InstallDir "CodexPetLimitRings.exe"
 $Startup = Join-Path ([Environment]::GetFolderPath("Startup")) "CodexPetLimitRings.lnk"

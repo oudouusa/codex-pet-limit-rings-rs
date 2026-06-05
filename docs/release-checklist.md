@@ -7,14 +7,28 @@ Use this before publishing a fork or derivative repository.
 - Keep `LICENSE` and `NOTICE.md`.
 - Keep README install URLs pointed at the published repository URL.
 - Do not commit `tmp/`, `target/`, local screenshots, Codex logs, auth files, or generated pet assets.
-- Commit `tools/rust/Cargo.lock` with the Windows source build.
+- Commit `Cargo.lock` with the Windows source build.
 
 ## Windows / Rust
 
 ```powershell
-cargo fmt --manifest-path .\tools\rust\Cargo.toml --check
-cargo build --manifest-path .\tools\rust\Cargo.toml --release
-cargo run --manifest-path .\tools\rust\Cargo.toml -- --preview .\tmp\limit-rings-windows-preview.png --size 220
+$failed = $false
+Get-ChildItem -Path .\tools -Filter *.ps1 | ForEach-Object {
+    $tokens = $null
+    $errors = $null
+    [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$errors) > $null
+    if ($errors.Count -gt 0) {
+        $failed = $true
+        Write-Host "ERROR $($_.Name)"
+        $errors | ForEach-Object { Write-Host $_.Message }
+    }
+}
+if ($failed) { exit 1 }
+
+cargo fmt --check
+cargo clippy -- -D warnings
+cargo build --release
+cargo run -- --preview .\tmp\limit-rings-windows-preview.png --size 220
 .\tools\install-limit-rings.ps1
 .\tools\verify-limit-rings.ps1
 ```

@@ -1,4 +1,3 @@
-#![windows_subsystem = "windows"]
 #![allow(unsafe_op_in_unsafe_fn)]
 
 use std::{
@@ -681,10 +680,10 @@ fn find_string_property(value: &Value, name: &str) -> Option<String> {
     match value {
         Value::Object(map) => {
             for (key, value) in map {
-                if key == name {
-                    if let Some(text) = value.as_str() {
-                        return Some(text.to_owned());
-                    }
+                if key == name
+                    && let Some(text) = value.as_str()
+                {
+                    return Some(text.to_owned());
                 }
                 if let Some(found) = find_string_property(value, name) {
                     return Some(found);
@@ -1408,14 +1407,16 @@ fn render_rings(
     if let Some(primary) = state.primary {
         draw_ring(
             pixmap.as_mut(),
-            center,
-            outer_radius,
-            7.0 * visual_scale,
-            primary,
-            options.color_for(primary.remaining_percent(), true),
-            0.20,
-            phase,
-            visual_scale,
+            RingSpec {
+                center,
+                radius: outer_radius,
+                width: 7.0 * visual_scale,
+                bucket: primary,
+                color: options.color_for(primary.remaining_percent(), true),
+                track_alpha: 0.20,
+                phase,
+                visual_scale,
+            },
         );
     } else {
         draw_missing_ring(pixmap.as_mut(), center, outer_radius, 7.0 * visual_scale);
@@ -1423,14 +1424,16 @@ fn render_rings(
     if let Some(secondary) = state.secondary {
         draw_ring(
             pixmap.as_mut(),
-            center,
-            inner_radius,
-            4.5 * visual_scale,
-            secondary,
-            options.color_for(secondary.remaining_percent(), false),
-            0.14,
-            phase + 0.18,
-            visual_scale,
+            RingSpec {
+                center,
+                radius: inner_radius,
+                width: 4.5 * visual_scale,
+                bucket: secondary,
+                color: options.color_for(secondary.remaining_percent(), false),
+                track_alpha: 0.14,
+                phase: phase + 0.18,
+                visual_scale,
+            },
         );
     }
     if show_readout {
@@ -1503,8 +1506,7 @@ fn draw_ticks(mut pixmap: PixmapMut<'_>, center: (f32, f32), radius: f32, visual
     }
 }
 
-fn draw_ring(
-    mut pixmap: PixmapMut<'_>,
+struct RingSpec {
     center: (f32, f32),
     radius: f32,
     width: f32,
@@ -1513,7 +1515,19 @@ fn draw_ring(
     track_alpha: f32,
     phase: f64,
     visual_scale: f32,
-) {
+}
+
+fn draw_ring(mut pixmap: PixmapMut<'_>, spec: RingSpec) {
+    let RingSpec {
+        center,
+        radius,
+        width,
+        bucket,
+        color,
+        track_alpha,
+        phase,
+        visual_scale,
+    } = spec;
     let remaining = (bucket.remaining_percent() / 100.0).max(0.018);
     let sweep = remaining as f32 * std::f32::consts::TAU;
     let used_sweep = std::f32::consts::TAU - sweep;
@@ -1629,27 +1643,18 @@ fn draw_readout(
     let x = (label.0 - w / 2.0).clamp(edge, max_x).round();
     let y = (label.1 - h / 2.0).clamp(edge, max_y).round();
     let radius = (h * 0.34).clamp(5.0 * visual_scale, 8.0 * visual_scale);
+    let Some(rect) = tiny_skia::Rect::from_xywh(x, y, w, h) else {
+        return;
+    };
     fill_round_rect(pixmap, x, y, w, h, radius, Rgba::new(10, 14, 20, 184));
     stroke_round_rect(
         pixmap,
-        x,
-        y,
-        w,
-        h,
+        rect,
         radius,
         1.0 * visual_scale,
         color.with_alpha(180),
     );
-    draw_native_label_text(
-        pixmap,
-        &text,
-        x,
-        y,
-        w,
-        h,
-        font_px,
-        Rgba::new(255, 255, 255, 238),
-    );
+    draw_native_label_text(pixmap, &text, rect, font_px, Rgba::new(255, 255, 255, 238));
 }
 
 fn stroke_circle(
@@ -1761,17 +1766,11 @@ fn fill_round_rect(
 
 fn stroke_round_rect(
     pixmap: &mut PixmapMut<'_>,
-    x: f32,
-    y: f32,
-    w: f32,
-    h: f32,
+    rect: tiny_skia::Rect,
     radius: f32,
     width: f32,
     color: Rgba,
 ) {
-    let Some(rect) = tiny_skia::Rect::from_xywh(x, y, w, h) else {
-        return;
-    };
     let path = rounded_rect_path(rect, radius);
     stroke_path(pixmap, &path, width, color);
 }
@@ -1864,15 +1863,12 @@ fn readout_badge_size(text: &str, font_px: i32, visual_scale: f32) -> (f32, f32)
 fn draw_native_label_text(
     pixmap: &mut PixmapMut<'_>,
     text: &str,
-    x: f32,
-    y: f32,
-    w: f32,
-    h: f32,
+    rect: tiny_skia::Rect,
     font_px: i32,
     color: Rgba,
 ) {
-    let width = w.round().max(1.0) as i32;
-    let height = h.round().max(1.0) as i32;
+    let width = rect.width().round().max(1.0) as i32;
+    let height = rect.height().round().max(1.0) as i32;
     let Some(mask) = render_text_mask(text, width, height, font_px) else {
         return;
     };
@@ -1881,8 +1877,8 @@ fn draw_native_label_text(
         &mask,
         width as usize,
         height as usize,
-        x.round() as i32,
-        y.round() as i32,
+        rect.left().round() as i32,
+        rect.top().round() as i32,
         color,
     );
 }
@@ -2386,7 +2382,7 @@ fn render_preview(config: &Config) -> bool {
     pixmap.save_png(path).is_ok()
 }
 
-fn main() {
+pub fn run() {
     let Some(config) = parse_config() else {
         return;
     };

@@ -2,8 +2,8 @@
 
 This project is published under the MIT License. See `LICENSE`.
 
-This repository was prepared as a Windows/Rust-friendly companion derived from
-and inspired by the MIT-licensed project:
+This repository was prepared as a Windows-only Rust companion derived from and
+inspired by the MIT-licensed project:
 
 https://github.com/petergpt/codex-pet-limit-rings
 

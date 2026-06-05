@@ -1,4 +1,4 @@
 interface:
   display_name: "Codex Pet Limit Rings"
   short_description: "Install and tune Codex pet limit rings."
-  default_prompt: "Use $codex-pet-limit-rings to install Codex Pet Limit Rings for my Codex pet and verify the menu-bar toggle works."
+  default_prompt: "Use $codex-pet-limit-rings to install Codex Pet Limit Rings for my Codex pet on Windows and verify the notification-area toggle works."

@@ -1,216 +1,193 @@
 # codex-pet-limit-rings-rs
 
-Codex pets are tiny ambient companions for the work happening in Codex. This Rust-focused Windows companion adds one more layer to that idea: your pet can quietly show how much Codex capacity you have left, without turning the app into a dashboard.
+Codex Pet Limit Rings を **Windows向けにRustで作り直した** 軽量な常駐アプリです。Codex pet のまわりに利用上限の残量リングを重ねて表示します。
 
-The main build in this repository is a native Rust app for Windows. It watches where the Codex pet is, draws two polished rings around it, and keeps those rings attached to the pet as it moves. It does not patch Codex, change pet art, or modify the Codex app bundle.
-
-It works with whatever Codex pet you like. Built-in pet, custom pet, tiny dog, robot, weather daemon, or anything else: the app does not care. It only follows the pet window that Codex is already showing.
+このリポジトリは、MITライセンスの [`petergpt/codex-pet-limit-rings`](https://github.com/petergpt/codex-pet-limit-rings) を参考にしています。参考元の「Codex本体を改造せず、外部コンパニオンアプリとしてpetに寄り添う」という設計思想を引き継ぎつつ、Windows専用のRust/Win32実装として再構築しています。
 
 ![Codex Pet Limit Rings around a Codex pet](docs/assets/codex-pet-limit-rings-screenshot.png)
 
-## What You See
+## 特徴
 
-The rings are designed to be glanceable:
+- **Windows専用のネイティブRust実装**
+  ElectronやWebViewを使わず、Win32 layered windowで透明オーバーレイを描画します。
+- **軽量な常駐プロセス**
+  アイドル時は描画更新を抑え、定期的にworking setをトリムします。ローカル検証ではアイドル時のworking setは約2-3MBでした。
+- **Codex本体を改造しない**
+  Codexのアプリファイル、pet画像、asar、署名、設定をパッチしません。インストールもアンインストールも独立しています。
+- **どのCodex petでも使える**
+  petの種類や画像を見ず、Codexが表示しているpetウィンドウの位置を追跡します。
+- **Windows通知領域から操作できる**
+  表示/非表示、更新、位置の微調整、終了を通知領域アイコンから操作できます。
+- **ライブ値とキャッシュ値に対応**
+  ChatGPTの利用状況エンドポイントからライブ値を読み、失敗時はローカルのCodexログに残った `codex.rate_limits` をフォールバックとして使います。
 
-- The outer ring shows the short-window limit remaining.
-- The inner ring shows the weekly limit remaining.
-- Color moves from calm green/blue to amber and red as capacity gets low.
-- Hovering over the pet or rings shows the exact percentages at the current ring endpoints.
-- A small menu-bar icon lets you hide the rings, refresh data, or quit.
+## 表示内容
 
-When the Codex pet is closed, the rings disappear. When the pet comes back, they come back too. On multi-display setups, the rings stay with the pet instead of jumping to whichever screen is focused.
+- 外側リング: 短い時間窓の残量
+- 内側リング: 週次上限の残量
+- 残量が少なくなると、リング色がグリーン/ブルーからアンバー、レッドへ変化
+- petまたはリングにホバーすると、リング端に残量パーセントを表示
+- Codex petを閉じるとリングも非表示
+- petを移動すると、リングもpetに追従
 
-Because the rings are drawn in a separate transparent overlay, they do not need pet-specific sprites, masks, metadata, or configuration. Change pets in Codex and the rings follow the new one automatically.
+## 必要なもの
 
-## Why It Works This Way
+- Windows 10 または Windows 11
+- Codex desktop app
+- Codex pet が有効になっていること
+- PowerShell 5.1 以上
+- Rust/Cargo stable toolchain
+- Windows Rustビルド環境
+  通常は `x86_64-pc-windows-msvc` と Microsoft C++ Build Tools / Visual Studio Build Tools
+- `%USERPROFILE%\.codex` 配下のローカルCodex状態ファイル
 
-The important design choice is the companion boundary. A menu item inside Codex itself would mean patching Electron app files and redoing that patch after app updates. That is brittle and hard to open source.
+不要なもの:
 
-`codex-pet-limit-rings` stays outside the Codex app. It reads local Codex state, asks ChatGPT for live usage data using the local Codex/ChatGPT token, and renders its own transparent always-on-top window around the pet. The result is reversible, inspectable, and easy for another Codex agent to install or modify.
+- OpenAI API key
+- 管理者権限
+- Codex本体へのパッチ
 
-## Quick Start
+## 使い方
 
-### Windows / Rust
+このリポジトリは、現時点ではソースからのビルドを前提にしています。
 
-The Windows companion app lives under `tools/rust/`. It is written in Rust and
-uses Win32 layered windows for a transparent, low-memory overlay. It tracks the
-live pet window, follows dragging and momentum movement, handles mixed-DPI
-displays, and keeps the rings attached to the pet.
-
-Requirements:
-
-- Windows 10 or Windows 11.
-- Codex desktop app with a Codex pet enabled.
-- PowerShell 5.1 or newer.
-- Git, when installing from a cloned repository.
-- Rust/Cargo stable toolchain.
-- A working Windows Rust build environment, usually `x86_64-pc-windows-msvc`
-  with Microsoft C++ Build Tools or Visual Studio Build Tools installed.
-- Local Codex files under `%USERPROFILE%\.codex`.
-- Internet access for live usage data. Cached local limit data can still be
-  used when live usage is unavailable.
-
-Not required:
-
-- OpenAI API key.
-- Administrator privileges.
-- Patching or modifying the Codex app.
-
-Run it from source:
+開発実行:
 
 ```powershell
 .\tools\run-limit-rings.ps1
 ```
 
-Install it as a Startup shortcut:
+WindowsのStartupへインストール:
 
 ```powershell
 .\tools\install-limit-rings.ps1
 ```
 
-Verify an installed copy:
+インストール確認:
 
 ```powershell
 .\tools\verify-limit-rings.ps1
 ```
 
-See `docs/windows-limit-rings.md` for details.
+アンインストール:
 
-### macOS
-
-Install the rings as a login item:
-
-```bash
-tools/install-limit-rings.sh
+```powershell
+.\tools\uninstall-limit-rings.ps1
 ```
 
-You should see a small rings icon in the macOS menu bar. Use that menu to toggle `Show Rings`, refresh the latest usage data, or quit.
+リング位置が少しずれる場合は、petの中心にマウスカーソルを置いて `Ctrl+Alt+R` を押してください。通知領域メニューの `Left` / `Right` / `Up` / `Down` でも微調整できます。
 
-Then use any Codex pet normally. No pet setup step is required.
+## Codexにインストールを頼む
 
-Run a development build without installing the login item:
-
-```bash
-tools/run-limit-rings.sh
-```
-
-Uninstall everything the installer adds:
-
-```bash
-tools/uninstall-limit-rings.sh
-```
-
-## Give This Repo To Codex
-
-This repository is structured so a Codex agent can pick it up from a GitHub link.
-
-Ask the agent with one sentence:
+CodexにこのリポジトリURLを渡す場合は、次のように頼めます。
 
 ```text
-Install Codex Pet Limit Rings from https://github.com/oudouusa/codex-pet-limit-rings-rs for this computer, start it, and verify it is running.
+Install Codex Pet Limit Rings from https://github.com/oudouusa/codex-pet-limit-rings-rs for this Windows computer, start it, and verify it is running.
 ```
 
-The agent should read:
+このリポジトリにはCodex向けの作業メモとSkillを同梱しています。
 
-- `AGENTS.md` for the project contract.
-- `skills/codex-pet-limit-rings/SKILL.md` for the install, debug, and validation workflow.
-- `docs/limit-rings.md` for the data and rendering model.
+- `AGENTS.md`
+- `skills/codex-pet-limit-rings/SKILL.md`
+- `docs/limit-rings.md`
+- `docs/windows-limit-rings.md`
 
-To install the bundled skill into local Codex:
-
-```bash
-tools/install-codex-skill.sh
-```
-
-On Windows:
+SkillをローカルCodexへインストールする場合:
 
 ```powershell
 .\tools\install-codex-skill.ps1
 ```
 
-## Data And Privacy
+## データとプライバシー
 
-The app reads only local Codex files and one ChatGPT usage endpoint:
+このアプリが読むもの:
 
-- `~/.codex/.codex-global-state.json` or `%USERPROFILE%\.codex\.codex-global-state.json` tells it whether the pet is open and where it is.
-- `~/.codex/auth.json` or `%USERPROFILE%\.codex\auth.json` provides the local bearer token used to read live usage from ChatGPT.
-- `~/.codex/logs_2.sqlite` or `%USERPROFILE%\.codex\logs_2.sqlite` is used as a cached fallback if live usage is unavailable.
+- `%USERPROFILE%\.codex\.codex-global-state.json`
+  Codex petの表示状態と位置
+- `%USERPROFILE%\.codex\auth.json`
+  ChatGPT利用状況を読むためのローカルアクセストークン
+- `%USERPROFILE%\.codex\logs_2.sqlite` または `logs_1.sqlite`
+  ライブ取得に失敗した場合のローカルキャッシュ
+- `https://chatgpt.com/backend-api/wham/usage`
+  ライブ利用状況
 
-It does not require an OpenAI API key. It does not send pet images, screenshots, prompts, or repo contents anywhere.
+このアプリがしないこと:
 
-## Project Shape
+- OpenAI API keyの要求
+- pet画像、スクリーンショット、プロンプト、リポジトリ内容の送信
+- Codexアプリ本体の改変
 
-```text
-tools/
-  codex-pet-limit-rings.swift      native macOS companion app
-  rust/                            native Windows companion app
-  install-limit-rings.sh           build, install, and start at login
-  install-limit-rings.ps1          build, install, and start at Windows login
-  uninstall-limit-rings.sh         remove the app and login item
-  uninstall-limit-rings.ps1        remove the Windows app and Startup shortcut
-  run-limit-rings.sh               development launch
-  run-limit-rings.ps1              Windows development launch
-  verify-limit-rings.ps1           Windows install verification
-  build-limit-rings.sh             app bundle builder
-  install-codex-skill.sh           copy the bundled skill into ~/.codex/skills
-  install-codex-skill.ps1          copy the bundled skill into %USERPROFILE%\.codex\skills
+## 開発
 
-skills/codex-pet-limit-rings/
-  SKILL.md                         Codex-agent workflow for this project
-
-docs/
-  limit-rings.md                   implementation contract and data flow
-  windows-limit-rings.md           Windows companion app notes
-
-experiments/weather-pets/
-  earlier weather-pet renderer     kept as a separate experiment
-```
-
-## Development
-
-Build the macOS app:
-
-```bash
-tools/build-limit-rings.sh
-```
-
-Render a static preview PNG:
-
-```bash
-swiftc tools/codex-pet-limit-rings.swift -o tmp/codex-pet-limit-rings -framework AppKit -lsqlite3
-tmp/codex-pet-limit-rings --preview tmp/limit-rings-preview.png --size 164
-```
-
-Build the Windows Rust app:
+フォーマット:
 
 ```powershell
-cargo build --manifest-path .\tools\rust\Cargo.toml --release
-cargo run --manifest-path .\tools\rust\Cargo.toml -- --preview .\tmp\limit-rings-windows-preview.png --size 220
+cargo fmt --check
 ```
 
-The release executable is written to:
+チェック:
+
+```powershell
+cargo check
+cargo clippy -- -D warnings
+```
+
+リリースビルド:
+
+```powershell
+cargo build --release
+```
+
+プレビューPNG生成:
+
+```powershell
+cargo run -- --preview .\tmp\limit-rings-windows-preview.png --size 220
+```
+
+Windows上でのrelease実行ファイル:
 
 ```text
-tools\rust\target\release\codex-pet-limit-rings.exe
+target\release\codex-pet-limit-rings.exe
 ```
 
-Validate the shell scripts:
+WSLなどからWindows GNU targetで確認する場合:
 
 ```bash
-bash -n tools/*.sh
+CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=x86_64-w64-mingw32-gcc \
+CARGO_TARGET_X86_64_PC_WINDOWS_GNU_AR=x86_64-w64-mingw32-ar \
+cargo build --target x86_64-pc-windows-gnu --release
 ```
 
-## Experiments
+## リポジトリ構成
 
-The original exploration included a Python renderer for weather-mutated Codex pets. That work now lives under `experiments/weather-pets/` so the public repo can stay focused on limit rings while preserving the larger idea: Codex pets can become ambient interfaces for state, context, and mood.
+```text
+src/
+  main.rs                  エントリポイント
+  windows_app.rs           Win32 overlay実装
+
+tools/
+  install-limit-rings.ps1  ビルド、インストール、Startup登録
+  run-limit-rings.ps1      開発実行
+  verify-limit-rings.ps1   インストール確認
+  uninstall-limit-rings.ps1
+  install-codex-skill.ps1
+
+docs/
+  limit-rings.md           データと描画モデル
+  windows-limit-rings.md   Windows実装メモ
+
+skills/codex-pet-limit-rings/
+  SKILL.md                 Codex向けインストール/検証ワークフロー
+```
+
+このリポジトリはWindows/Rust版として整理しているため、参考元に含まれるmacOS Swiftアプリ、shell installer、plist、weather-pet実験コードは含めていません。
+
+## 参考元
+
+- [`petergpt/codex-pet-limit-rings`](https://github.com/petergpt/codex-pet-limit-rings)
+
+設計、ドキュメント構成、コンパニオンアプリとしての境界づけは参考元から着想を得ています。詳細は `NOTICE.md` を参照してください。
 
 ## License
 
 MIT. See `LICENSE`.
-
-## Acknowledgements
-
-This repository is derived from and inspired by the MIT-licensed
-[`petergpt/codex-pet-limit-rings`](https://github.com/petergpt/codex-pet-limit-rings)
-project. Portions of the documentation, repository structure, and companion-app
-design were adapted from that project. See `NOTICE.md`.
